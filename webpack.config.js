@@ -1,5 +1,9 @@
 const webpack = require('webpack');
 const path = require('path');
+const childProcess = require('child_process');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+require('dotenv').config();
 
 module.exports = {
   mode: 'development',
@@ -36,7 +40,24 @@ module.exports = {
   },
   plugins: [
     new webpack.BannerPlugin({
-      banner: '마지막 빌드 시간은 ' + new Date().toLocaleString() + ' 입니다.',
+      banner: `
+    Commit version : ${childProcess.execSync('git rev-parse --short HEAD')}
+    Committer : ${childProcess.execSync('git config user.name')}
+    Commit Date : ${new Date().toLocaleString()}
+`,
     }),
+    new webpack.DefinePlugin({
+      // 외부에 노출되면 안되는 비밀번호
+      pw: 123456,
+      // 이제 pw는 환경변수가 됨! 어플리케이션 내에서 어디서든 접근이 가능하다.
+      dev: JSON.stringify(process.env.DEV_API), // 혹은 "'https://dev.api.com'"
+      pro: JSON.stringify(process.env.PRO_API),
+    }),
+    new HtmlWebpackPlugin({
+      // 목표 html 파일의 위치
+      template: './src/index.html',
+    }),
+    new CleanWebpackPlugin(),
+    // dist 폴더에 있던 필요없는 이미지 파일이 제거됨
   ],
 };
